@@ -21,51 +21,71 @@
 <script src="src/videojs-media-sources.js"></script>
 
 <script>
-  var video;
-  var req = new XMLHttpRequest();
-
-  // initialize video.js
-  var video = videojs('video');
-
   // the flash-based media sources implementation only supports FLV video data
   // use XMLHttpRequest2 to get the raw byte array of an example FLV
-  req.open('GET', 'barsandtone.flv', true);
-  req.responseType = 'arraybuffer';
+  var req1 = new XMLHttpRequest();
+  req1.open('GET', 'barsandtone.flv.1', true);
+  req1.responseType = 'arraybuffer';
 
-  req.onload = function(event){
-    console.log('onload');
+  var req2 = new XMLHttpRequest();
+  req2.open('GET', 'barsandtone.flv.2', true);
+  req2.responseType = 'arraybuffer';
+
+  var data = [false, false];
+
+  req1.onload = function(event){
+    // wrap the arraybuffer in a view so we can easily work with the
+    // individual bytes
+    var bytes = new Uint8Array(req1.response);
+
+    data[0] = bytes;
+    makeMedia();
+  };
+  req1.send(null);
+
+  req2.onload = function(event){
+    // wrap the arraybuffer in a view so we can easily work with the
+    // individual bytes
+    var bytes = new Uint8Array(req2.response);
+
+    data[1] = bytes;
+    makeMedia();
+  };
+  req2.send(null);
+
+
+  function makeMedia(){
+    if(data[0] === false || data[1] === false) return;
+
+    // initialize video.js
+    var video = videojs('video');
+
     // create a new media source to hold the data buffers
     var mediaSource = new videojs.MediaSource();
 
-    // wrap the arraybuffer in a view so we can easily work with the
-    // individual bytes
-    var bytes = new Uint8Array(req.response);
+    // to assign a media source to a video element, you have to create a URL for it
+    var url = videojs.URL.createObjectURL(mediaSource);
 
     // when a media source is assigned to a video element the `sourceopen`
     // event fires
     mediaSource.addEventListener('sourceopen', function(event){
-      console.log('sourceopen');
-
       // construct the video data buffer and set the appropriate MIME type
       var sourceBuffer = mediaSource.addSourceBuffer('video/flv; codecs="vp6,aac"');
 
       // start feeding bytes to the buffer
       // the video element that is reading from the associated media buffer is
       // ready to start playing now
-      sourceBuffer.appendBuffer(bytes, video);
+      sourceBuffer.appendBuffer(data[0]);
+      sourceBuffer.appendBuffer(data[1]);
 
     }, false);
 
-    // to assign a media source to a video element, you have to create a URL for it
-    var url = videojs.URL.createObjectURL(mediaSource);
-
     // assign the media source URL to video.js
-    video.src({ 
-      src: url, 
+    video.src({
+      src: url,
       type: "video/flv"
     });
-  };
-  req.send(null);
+  }
 </script>
 </body>
 </html>
