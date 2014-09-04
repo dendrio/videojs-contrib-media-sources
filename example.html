@@ -43,9 +43,8 @@
   req.open('GET', 'barsandtone.flv', true);
   req.overrideMimeType('text\/plain; charset=x-user-defined');
   //req.responseType = 'arraybuffer';
-  var data;
-  var videoReady = false;
   var sourceBuffer;
+  var loadedAmount = 0;
 
   // when a media source is assigned to a video element the `sourceopen`
   // event fires
@@ -56,8 +55,6 @@
     // start feeding bytes to the buffer
     // the video element that is reading from the associated media buffer is
     // ready to start playing now
-    // sourceBuffer.appendBuffer(data);
-    videoReady = true;
 
     req.send(null);
   }, false);
@@ -71,20 +68,15 @@
   req.onreadystatechange = function(){
     var LOADING = 3;
     var FINISHED = 4;
-    /*if (req.readyState == LOADING) {
+    if (req.readyState === LOADING) {
       // wrap the arraybuffer in a view so we can easily work with the
       // individual bytes
       var bytes = str2ab(req.responseText);
-
-      if(videoReady){
-        //sourceBuffer.appendBuffer(bytes);
-      }else{
-        data += bytes;
-      }
-    }*/
-    if (req.readyState == FINISHED) {
-      var bytes = str2ab(req.responseText);
       bytes = new Uint8Array(bytes);
+      var totalAmount = bytes.length;
+      bytes = bytes.subarray(loadedAmount);
+      loadedAmount = totalAmount;
+
       sourceBuffer.appendBuffer(bytes);
     }
   };
